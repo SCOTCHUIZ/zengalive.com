@@ -377,12 +377,16 @@
       container.appendChild(btn);
     }
 
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+
     async function seedIfEmpty(col) {
       const snap = await getDocs(col);
       if (!snap.empty) return;
+      let order = 0;
       for (const [category, items] of Object.entries(SEED_SOUNDS)) {
-        for (let i = 0; i < items.length; i++) {
-          await addDoc(col, { ...items[i], category, order: i });
+        for (const item of items) {
+          await addDoc(col, { ...item, category, order: order++ });
+          await delay(200);
         }
       }
     }
