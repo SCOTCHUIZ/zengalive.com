@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 52 | 2026-08-07 -->
+<!-- REVISION: 53 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -274,11 +274,11 @@
       background: #1e1e1e;
       border: 1px solid #333;
       border-radius: 16px;
-      padding: 24px;
-      width: 320px;
+      padding: 20px;
+      width: min(280px, 92vw);
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     #edit-form h3 { font-size: 1rem; color: #e0e0e0; }
@@ -310,13 +310,75 @@
 
     .inout-row { display: flex; gap: 8px; }
     .inout-row input { width: 50%; }
+
+    /* Timeline scrubber */
+    #trim-timeline {
+      position: relative;
+      height: 36px;
+      background: #2a2a2a;
+      border-radius: 6px;
+      overflow: visible;
+    }
+    #trim-track {
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 4px;
+      background: #444;
+      transform: translateY(-50%);
+      border-radius: 2px;
+    }
+    #trim-range {
+      position: absolute;
+      top: 50%;
+      height: 4px;
+      background: #1565c0;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+    #trim-playhead {
+      position: absolute;
+      top: 4px; bottom: 4px;
+      width: 2px;
+      background: #fff;
+      pointer-events: none;
+      display: none;
+    }
+    .trim-thumb {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 14px;
+      margin-left: -7px;
+      background: #fff;
+      border-radius: 3px;
+      cursor: ew-resize;
+      z-index: 2;
+    }
+    #trim-in-thumb  { background: #4caf50; }
+    #trim-out-thumb { background: #f44336; }
+    #trim-time-label {
+      font-size: 0.7rem;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+    }
+    #trim-preview-btn {
+      background: #1565c0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r52</span>
+    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r53</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -390,6 +452,16 @@
         <option value="sfx">Sound Effects</option>
         <option value="quotes">Quotes</option>
       </select>
+      <!-- Timeline scrubber -->
+      <div id="trim-timeline">
+        <div id="trim-track"></div>
+        <div id="trim-range"></div>
+        <div id="trim-playhead"></div>
+        <div class="trim-thumb" id="trim-in-thumb"></div>
+        <div class="trim-thumb" id="trim-out-thumb"></div>
+      </div>
+      <div id="trim-time-label"><span id="trim-in-label">In: --</span><span id="trim-out-label">Out: --</span></div>
+      <button id="trim-preview-btn" onclick="previewTrim()">▶ Preview Trim</button>
       <div class="inout-row">
         <input type="number" id="edit-timein" placeholder="In (sec)" step="0.1" min="0" />
         <input type="number" id="edit-timeout" placeholder="Out (sec)" step="0.1" min="0" />
@@ -671,19 +743,116 @@
 
     // --- Edit Modal ---
     let editingId = null;
+    let trimAudio = null, trimDuration = 0;
+
+    function updateTrimUI() {
+      const tl = document.getElementById("trim-timeline");
+      const w = tl.offsetWidth;
+      const inVal  = parseFloat(document.getElementById("edit-timein").value)  || 0;
+      const outVal = parseFloat(document.getElementById("edit-timeout").value) || trimDuration;
+      const inPct  = trimDuration ? inVal  / trimDuration * 100 : 0;
+      const outPct = trimDuration ? outVal / trimDuration * 100 : 100;
+      document.getElementById("trim-in-thumb").style.left  = inPct  + "%";
+      document.getElementById("trim-out-thumb").style.left = outPct + "%";
+      document.getElementById("trim-range").style.left  = inPct  + "%";
+      document.getElementById("trim-range").style.width = (outPct - inPct) + "%";
+      document.getElementById("trim-in-label").textContent  = "In: "  + inVal.toFixed(1)  + "s";
+      document.getElementById("trim-out-label").textContent = "Out: " + outVal.toFixed(1) + "s";
+    }
+
+    function makeDraggable(thumbId, inputId, isOut) {
+      const thumb = document.getElementById(thumbId);
+      thumb.addEventListener("mousedown", startDrag);
+      thumb.addEventListener("touchstart", startDrag, { passive: true });
+      function startDrag(e) {
+        e.preventDefault && e.preventDefault();
+        const onMove = ev => {
+          const tl = document.getElementById("trim-timeline");
+          const rect = tl.getBoundingClientRect();
+          const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+          let pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+          let val = pct * trimDuration;
+          if (isOut) {
+            const inVal = parseFloat(document.getElementById("edit-timein").value) || 0;
+            val = Math.max(inVal + 0.1, val);
+          } else {
+            const outVal = parseFloat(document.getElementById("edit-timeout").value) || trimDuration;
+            val = Math.min(outVal - 0.1, val);
+          }
+          document.getElementById(inputId).value = val.toFixed(1);
+          updateTrimUI();
+        };
+        const onUp = () => {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          document.removeEventListener("touchmove", onMove);
+          document.removeEventListener("touchend", onUp);
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+        document.addEventListener("touchmove", onMove);
+        document.addEventListener("touchend", onUp);
+      }
+    }
+
+    makeDraggable("trim-in-thumb",  "edit-timein",  false);
+    makeDraggable("trim-out-thumb", "edit-timeout", true);
+
+    document.getElementById("edit-timein").addEventListener("input", updateTrimUI);
+    document.getElementById("edit-timeout").addEventListener("input", updateTrimUI);
+
+    window.previewTrim = function() {
+      if (!trimAudio) return;
+      const inVal  = parseFloat(document.getElementById("edit-timein").value)  || 0;
+      const outVal = parseFloat(document.getElementById("edit-timeout").value) || trimDuration;
+      trimAudio.pause();
+      trimAudio.currentTime = inVal;
+      const playhead = document.getElementById("trim-playhead");
+      playhead.style.display = "block";
+      trimAudio.play();
+      const tick = () => {
+        if (!trimAudio || trimAudio.paused) { playhead.style.display = "none"; return; }
+        if (trimAudio.currentTime >= outVal) {
+          trimAudio.pause();
+          playhead.style.display = "none";
+          return;
+        }
+        const pct = trimDuration ? trimAudio.currentTime / trimDuration * 100 : 0;
+        playhead.style.left = pct + "%";
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
 
     function openEdit(s) {
       editingId = s.id;
       document.getElementById("edit-label").value = s.label;
       document.getElementById("edit-url").value = s.url;
       document.getElementById("edit-category").value = s.category;
-      document.getElementById("edit-timein").value = s.timeIn != null ? s.timeIn : "";
+      document.getElementById("edit-timein").value  = s.timeIn  != null ? s.timeIn  : "";
       document.getElementById("edit-timeout").value = s.timeOut != null ? s.timeOut : "";
       document.getElementById("edit-status").textContent = "";
+      document.getElementById("trim-playhead").style.display = "none";
+      // load audio for timeline
+      if (trimAudio) { trimAudio.pause(); trimAudio = null; }
+      trimDuration = 0;
+      trimAudio = new Audio(s.url);
+      trimAudio.crossOrigin = "anonymous";
+      trimAudio.addEventListener("loadedmetadata", () => {
+        trimDuration = trimAudio.duration;
+        if (!document.getElementById("edit-timeout").value) {
+          document.getElementById("edit-timeout").value = trimDuration.toFixed(1);
+        }
+        updateTrimUI();
+      });
+      updateTrimUI();
       document.getElementById("edit-modal").classList.add("open");
     }
 
-    window.closeEdit = () => document.getElementById("edit-modal").classList.remove("open");
+    window.closeEdit = () => {
+      if (trimAudio) { trimAudio.pause(); trimAudio = null; }
+      document.getElementById("edit-modal").classList.remove("open");
+    };
 
     window.saveEdit = async function() {
       const status = document.getElementById("edit-status");
@@ -717,7 +886,7 @@
     document.getElementById("rev-tag").onclick = () => {
       revClicks++;
       clearTimeout(revTimer);
-      revTimer = setTimeout(() => revClicks = 0, 600);
+      revTimer = setTimeout(() => revClicks = 0, 1500);
       if (revClicks >= 3) { revClicks = 0; openManage(); }
     };
   </script>
