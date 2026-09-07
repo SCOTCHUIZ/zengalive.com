@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 55 | 2026-08-07 -->
+<!-- REVISION: 56 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -292,6 +292,7 @@
       padding: 8px 10px;
       font-size: 0.85rem;
       width: 100%;
+      min-width: 0;
     }
 
     #edit-form .row { display: flex; gap: 8px; }
@@ -379,7 +380,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r55</span>
+    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r56</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -864,8 +865,10 @@
       const timeOutVal = document.getElementById("edit-timeout").value;
       if (!label || !url) { status.textContent = "Label and URL are required."; return; }
       const updates = { label, url, category };
-      updates.timeIn = timeInVal !== "" ? parseFloat(timeInVal) : null;
-      updates.timeOut = timeOutVal !== "" ? parseFloat(timeOutVal) : null;
+      const parsedIn  = timeInVal  !== "" ? parseFloat(timeInVal)  : null;
+      const parsedOut = timeOutVal !== "" ? parseFloat(timeOutVal) : null;
+      updates.timeIn  = (parsedIn  && parsedIn  > 0)                        ? parsedIn  : null;
+      updates.timeOut = (parsedOut && parsedOut < trimDuration - 0.1)       ? parsedOut : null;
       await updateDoc(doc(db, "sounds", editingId), updates);
       const idx = allDocs.findIndex(s => s.id === editingId);
       if (idx !== -1) allDocs[idx] = { ...allDocs[idx], ...updates };
