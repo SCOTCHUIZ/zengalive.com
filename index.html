@@ -92,17 +92,16 @@
 
     /* Add Sound Panel */
     #add-btn {
-      position: fixed;
-      top: 4px;
-      left: 8px;
-      background: #1565c0;
+      background: #2e7d32;
       color: #fff;
       border: none;
       border-radius: 8px;
-      padding: 4px 10px;
-      font-size: 0.7rem;
+      padding: 6px 14px;
+      font-size: 0.8rem;
       cursor: pointer;
-      z-index: 1000;
+      font-weight: bold;
+      align-self: flex-start;
+      margin: 0 16px 8px;
     }
 
     #add-panel {
@@ -186,21 +185,6 @@
       background: #1565c0;
       width: 0%;
       transition: width 0.2s;
-    }
-
-    /* Manage Panel */
-    #manage-btn {
-      position: fixed;
-      top: 4px;
-      left: 90px;
-      background: #444;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 4px 10px;
-      font-size: 0.7rem;
-      cursor: pointer;
-      z-index: 1000;
     }
 
     #manage-panel {
@@ -330,12 +314,9 @@
 </head>
 <body>
 
-  <button id="add-btn">+ Add Sound</button>
-  <button id="manage-btn">Manage</button>
-
   <header>
     <h1>Soundboard</h1>
-    <span style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px;">r52</span>
+    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r52</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -355,7 +336,17 @@
   <h2>Quotes</h2>
   <div class="grid" id="quotes"></div>
 
-  <!-- Add Sound Panel -->
+  <!-- Manage Panel -->
+  <div id="manage-panel">
+    <div id="manage-header">
+      <h3>Manage Sounds</h3>
+      <button id="manage-close" onclick="closeManage()">Close</button>
+    </div>
+    <button id="add-btn" onclick="openAddForm()">+ Add Sound</button>
+    <div id="manage-list"></div>
+  </div>
+
+  <!-- Add Sound Form (inside manage) -->
   <div id="add-panel">
     <div id="add-form">
       <h3>Add Sound</h3>
@@ -384,15 +375,6 @@
         <button id="cancel-btn" onclick="closePanel()">Cancel</button>
       </div>
     </div>
-  </div>
-
-  <!-- Manage Panel -->
-  <div id="manage-panel">
-    <div id="manage-header">
-      <h3>Manage Sounds</h3>
-      <button id="manage-close" onclick="closeManage()">Close</button>
-    </div>
-    <div id="manage-list"></div>
   </div>
 
   <!-- Edit Modal -->
@@ -600,11 +582,6 @@
       if (currentSource) { try { currentSource.disconnect(); } catch(e){} }
     };
 
-    // --- Add Sound Panel ---
-    const ADMIN_PASSWORD = "zengsound";
-
-    let adminUnlocked = false;
-
     window.switchTab = function(tab) {
       document.getElementById("url-section").classList.toggle("active", tab === "url");
       document.getElementById("file-section").classList.toggle("active", tab === "file");
@@ -622,14 +599,7 @@
       document.getElementById("upload-progress-bar").style.width = "0%";
     };
 
-    document.getElementById("add-btn").onclick = () => {
-      if (!adminUnlocked) {
-        const pw = prompt("Password:");
-        if (pw !== ADMIN_PASSWORD) return;
-        adminUnlocked = true;
-      }
-      document.getElementById("add-panel").classList.add("open");
-    };
+    window.openAddForm = () => document.getElementById("add-panel").classList.add("open");
 
     window.saveSound = async function() {
       const label = document.getElementById("sound-label").value.trim();
@@ -742,13 +712,13 @@
       }, 600);
     };
 
-    document.getElementById("manage-btn").onclick = () => {
-      if (!adminUnlocked) {
-        const pw = prompt("Password:");
-        if (pw !== ADMIN_PASSWORD) return;
-        adminUnlocked = true;
-      }
-      openManage();
+    // --- Admin: triple-click revision tag to open manage ---
+    let revClicks = 0, revTimer;
+    document.getElementById("rev-tag").onclick = () => {
+      revClicks++;
+      clearTimeout(revTimer);
+      revTimer = setTimeout(() => revClicks = 0, 600);
+      if (revClicks >= 3) { revClicks = 0; openManage(); }
     };
   </script>
 </body>
