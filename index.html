@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 54 | 2026-08-07 -->
+<!-- REVISION: 55 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -379,7 +379,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r54</span>
+    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r55</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -839,7 +839,6 @@
       if (trimAudio) { trimAudio.pause(); trimAudio = null; }
       trimDuration = 0;
       trimAudio = new Audio(s.url);
-      trimAudio.crossOrigin = "anonymous";
       trimAudio.addEventListener("loadedmetadata", () => {
         trimDuration = trimAudio.duration;
         if (!document.getElementById("edit-timeout").value) {
