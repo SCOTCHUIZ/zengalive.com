@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<!-- REVISION: 50 | 2026-08-07 -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Soundboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 16px;
+      padding-bottom: 120px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      color: #e0e0e0;
+    }
+
+    #stop-btn {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100px;
+      background: #0a0a0a;
+      border: none;
+      border-top: 1px solid #333;
+      cursor: pointer;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    #stop-btn img {
+      height: 76px;
+      width: auto;
+    }
+
+    h2 {
+      margin: 24px 0 10px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #888;
+      border-bottom: 1px solid #333;
+      padding-bottom: 4px; 
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 10px;
+    }
+
+    .sound-btn {
+      aspect-ratio: 1;
+      border: none;
+      border-radius: 16px;
+      font-size: 0.65rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      line-height: 1.3;
+      transition: transform 0.1s, filter 0.15s;
+      word-break: break-word;
+    }
+
+    .sound-btn:active { transform: scale(0.95); filter: brightness(1.3); }
+
+    .blue   { background: #1565c0; color: #fff; }
+    .green  { background: #2e7d32; color: #fff; }
+    .purple { background: #6a1b9a; color: #fff; }
+    .orange { background: #e65100; color: #fff; }
+    .teal   { background: #00695c; color: #fff; }
+    .pink   { background: #880e4f; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Soundboard</h1>
+    <span style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px;">r50</span>
+  </header>
+
+  <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
+
+  <h2>Theme Songs</h2>
+  <div class="grid" id="themes"></div>
+
+  <h2>TV & Movies</h2>
+  <div class="grid" id="tv"></div>
+
+  <h2>Reactions</h2>
+  <div class="grid" id="reactions"></div>
+
+  <h2>Sound Effects</h2>
+  <div class="grid" id="sfx"></div>
+
+  <h2>Quotes</h2>
+  <div class="grid" id="quotes"></div>
+
+  <script>
+    const sounds = {
+      themes: [
+        { label: "A-Team", url: "https://www.myinstants.com/media/sounds/a-szupercsapat-a-team-teljes-zene-mp3cut.mp3" },
+        { label: "Green Acres", url: "/sounds/greenacres.mp3" },
+        { label: "Mission Impossible", url: "https://www.myinstants.com/media/sounds/m3.mp3" },
+      ],
+      tv: [
+
+        { label: "Cowbell", url: "/sounds/cowbell.mp3" },
+        { label: "Bazinga!", url: "https://www.myinstants.com/media/sounds/bazinga.mp3" },
+        { label: "Minion What", url: "https://www.myinstants.com/media/sounds/minion-what.mp3" },
+        { label: "Minions Laughing", url: "https://www.myinstants.com/media/sounds/minions-laughing.mp3" },
+        { label: "R2D2", url: "https://www.myinstants.com/media/sounds/r2d2-classic-sound.mp3" },
+        { label: "Tina Fat Lard", url: "https://www.myinstants.com/media/sounds/tina-you-fat-lard.mp3" },
+        { label: "Idiot", url: "https://www.myinstants.com/media/sounds/idiot-napoleon.mp3" },
+        { label: "Gosh", url: "https://www.myinstants.com/media/sounds/napoleon-gosh.mp3" },
+        { label: "Idiot 2", url: "https://www.myinstants.com/media/sounds/freakin-idiot-napoleon.mp3" },
+        { label: "Ah Raspberry", url: "/sounds/ah-raspberry.mp3" },
+        { label: "Tim Grunt", url: "https://www.myinstants.com/media/sounds/home-improvement-huh.mp3" },
+        { label: "Magnum PI", url: "https://www.myinstants.com/media/sounds/magnum-p.mp3"},
+        { label: "Free Weewy!", url: "/sounds/FreeWeewy.mp3" },
+        { label: "Spicy!", url: "/sounds/spicy.mp3" }
+      ],
+      reactions: [
+        { label: "Angry Cat", url: "https://www.myinstants.com/media/sounds/angry4.mp3" },
+        { label: "Kids Cheering", url: "https://www.myinstants.com/media/sounds/kids_cheering.mp3" },
+        { label: "Mexican Laugh", url: "https://www.myinstants.com/media/sounds/risitas.mp3" },
+        { label: "Hallelujah", url: "https://www.myinstants.com/media/sounds/hallelujah.mp3" },
+        { label: "Ewww", url: "https://us-tuna-sounds-files.voicemod.net/e13bbd96-12fc-497f-8073-2ef9f1a08579-1711423825927.mp3" },
+        { label: "Ewww 2", url: "https://www.myinstants.com/media/sounds/ewww-disgusting.mp3" },
+        { label: "Huh", url: "https://www.myinstants.com/media/sounds/confused-cross-eyed-kitten-meme.mp3" },
+        { label: "Baby Shark", url: "https://www.myinstants.com/media/sounds/baby-shark-dance-sing-and-dance-animal-songs-pinkfong-songs-for-children-audiotrimmer.mp3" },
+        { label: "Gangnam Style", url: "https://www.myinstants.com/media/sounds/psy-gangnam-style-1.mp3" },
+        { label: "Thank You", url: "https://www.myinstants.com/media/sounds/ww_beedle_thankyou.mp3" },
+        { label: "Oh", url: "https://www.myinstants.com/media/sounds/beedle-oh.mp3" },
+        { label: "Understand?", url: "/sounds/understand.mp3" },
+        { label: "Boring", url: "https://www.myinstants.com/media/sounds/yt1s_O1tbzox.mp3" },
+        { label: "Ahhh", url: "https://www.myinstants.com/media/sounds/aaah-online-audio-converter.mp3" },
+        { label: "D'oh!", url: "https://www.myinstants.com/media/sounds/homer-d-oh.mp3" },
+        { label: "Can't Touch This", url: "https://www.myinstants.com/media/sounds/cantouchthis.mp3" },
+        { label: "Ha Ha!", url: "https://cdn.blerp.com/normalized/1e0a0230-976b-11ec-9169-5994e35920ee" }
+      ],
+      sfx: [
+        { label: "Sad Trombone", url: "https://www.myinstants.com/media/sounds/sadtrombone.swf.mp3" },
+        { label: "Crickets", url: "https://www.myinstants.com/media/sounds/crickets.mp3" },
+        { label: "Ba Dum Tss", url: "https://www.myinstants.com/media/sounds/ba-dum-tss.mp3" },
+        { label: "Evil Laugh", url: "https://www.myinstants.com/media/sounds/evil-laugh.mp3" },
+        { label: "Buzzer", url: "https://www.myinstants.com/media/sounds/buzzer.mp3" },
+        { label: "Dance Party", url: "https://www.myinstants.com/media/sounds/instant-dance-party-song.mp3" },
+        { label: "Pizza Pizza", url: "https://www.myinstants.com/media/sounds/pizza-pizza.mp3" },
+        { label: "Mystery", url: "https://www.myinstants.com/media/sounds/mystery-thriller.mp3" },
+        { label: "Thunder", url: "https://www.myinstants.com/media/sounds/thunder-sound-effect.mp3" },
+        { label: "Western", url: "https://www.myinstants.com/media/sounds/o-bom-o-mal-e-o-feio-velho-oeste-desafio-dont-talk-duelo-desafio-armas.mp3" },
+        { label: "Jaws", url: "https://www.myinstants.com/media/sounds/dundundun.mp3" },
+        { label: "Addams Family", url: "https://www.myinstants.com/media/sounds/addams-family-door-bel.mp3" },
+        { label: "Save BIG $$", url: "https://www.myinstants.com/media/sounds/menards.mp3"},
+        { label: "Mexican Hat Dance", url: "https://www.myinstants.com/media/sounds/mexican_hat_dance.mp3"},
+        { label: "You Rang", url: "https://www.myinstants.com/media/sounds/yourang1.mp3"},
+        { label: "Duh Duh Duhn", url: "https://www.myinstants.com/media/sounds/dun-dun-dun-sound-effect-brass_8nFBccR.mp3" },
+        { label: "Taco Bell", url: "https://cdn.blerp.com/normalized/ab8299c0-91d4-11ec-8583-dfca0b055182" },
+        { label: "Yakety Sax", url: "https://cdn.blerp.com/normalized/74574640-9331-11ec-82ba-4b0b0588e63e" },
+        { label: "Batman '66", url: "https://cdn.blerp.com/normalized/a755fa40-976a-11ec-917b-7989fd768a45" },
+        { label: "Rimshot", url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2c1cb36319.mp3" }
+      ],
+       
+      quotes: [
+        { label: "Trump Thank You", url: "https://www.myinstants.com/media/sounds/thank-you-very-much-trump.mp3" },
+        { label: "Don't Be Rude", url: "https://www.myinstants.com/media/sounds/trump-dont-be-rude.mp3" },
+        { label: "I Don't Think So", url: "https://www.myinstants.com/media/sounds/hiatim.mp3" },
+      ]
+    };
+
+    // --- Audio setup with compressor ---
+    const colorMap = ["blue","green","purple","orange","teal","pink"];
+    let current = null;
+    let currentSource = null;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const compressor = audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -24;
+    compressor.knee.value = 12;
+    compressor.ratio.value = 8;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.15;
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0.8;
+    compressor.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    function playSound(url) {
+      if (current) { current.pause(); current.currentTime = 0; }
+      if (currentSource) { try { currentSource.disconnect(); } catch(e){} }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+
+      current = new Audio(url);
+      current.crossOrigin = "anonymous";
+      current.play().then(() => {
+        try {
+          currentSource = audioCtx.createMediaElementSource(current);
+          currentSource.connect(compressor);
+        } catch(e) {
+          current.volume = 0.6;
+        }
+      }).catch(() => {
+        current = new Audio(url);
+        current.volume = 0.6;
+        current.play();
+      });
+    }
+
+    // --- Render buttons ---
+    Object.entries(sounds).forEach(([category, items]) => {
+      const container = document.getElementById(category);
+      items.forEach((s, i) => {
+        const btn = document.createElement("button");
+        btn.className = "sound-btn " + colorMap[i % colorMap.length];
+        btn.textContent = s.label;
+        btn.onclick = () => playSound(s.url);
+        container.appendChild(btn);
+      });
+    });
+
+    // --- Stop All ---
+    document.getElementById("stop-btn").onclick = () => {
+      if (current) { current.pause(); current.currentTime = 0; }
+      if (currentSource) { try { currentSource.disconnect(); } catch(e){} }
+    };
+  </script>
+</body>
+</html>
