@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 51 | 2026-08-07 -->
+<!-- REVISION: 52 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -187,15 +187,155 @@
       width: 0%;
       transition: width 0.2s;
     }
+
+    /* Manage Panel */
+    #manage-btn {
+      position: fixed;
+      top: 28px;
+      left: 8px;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    #manage-panel {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 1002;
+      flex-direction: column;
+    }
+
+    #manage-panel.open { display: flex; }
+
+    #manage-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+
+    #manage-header h3 { font-size: 1rem; color: #e0e0e0; }
+
+    #manage-close {
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    #manage-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 12px 16px;
+    }
+
+    .manage-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid #222;
+    }
+
+    .manage-item-label {
+      flex: 1;
+      font-size: 0.85rem;
+      color: #ccc;
+    }
+
+    .manage-item-cat {
+      font-size: 0.7rem;
+      color: #666;
+      width: 80px;
+    }
+
+    .manage-edit-btn, .manage-del-btn {
+      border: none;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .manage-edit-btn { background: #1565c0; color: #fff; }
+    .manage-del-btn  { background: #b71c1c; color: #fff; }
+
+    /* Edit modal */
+    #edit-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1003;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #edit-modal.open { display: flex; }
+
+    #edit-form {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 24px;
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #edit-form h3 { font-size: 1rem; color: #e0e0e0; }
+
+    #edit-form input, #edit-form select {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+
+    #edit-form .row { display: flex; gap: 8px; }
+    #edit-form .row button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #edit-save-btn   { background: #2e7d32; color: #fff; }
+    #edit-cancel-btn { background: #444; color: #fff; }
+    #edit-status { font-size: 0.75rem; color: #aaa; text-align: center; min-height: 16px; }
+
+    .inout-row { display: flex; gap: 8px; }
+    .inout-row input { width: 50%; }
   </style>
 </head>
 <body>
 
   <button id="add-btn">+ Add Sound</button>
+  <button id="manage-btn">Manage</button>
 
   <header>
     <h1>Soundboard</h1>
-    <span style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px;">r51</span>
+    <span style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px;">r52</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -246,9 +386,43 @@
     </div>
   </div>
 
+  <!-- Manage Panel -->
+  <div id="manage-panel">
+    <div id="manage-header">
+      <h3>Manage Sounds</h3>
+      <button id="manage-close" onclick="closeManage()">Close</button>
+    </div>
+    <div id="manage-list"></div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal">
+    <div id="edit-form">
+      <h3>Edit Sound</h3>
+      <input type="text" id="edit-label" placeholder="Label" />
+      <input type="text" id="edit-url" placeholder="Sound URL" />
+      <select id="edit-category">
+        <option value="themes">Theme Songs</option>
+        <option value="tv">TV & Movies</option>
+        <option value="reactions">Reactions</option>
+        <option value="sfx">Sound Effects</option>
+        <option value="quotes">Quotes</option>
+      </select>
+      <div class="inout-row">
+        <input type="number" id="edit-timein" placeholder="In (sec)" step="0.1" min="0" />
+        <input type="number" id="edit-timeout" placeholder="Out (sec)" step="0.1" min="0" />
+      </div>
+      <div id="edit-status"></div>
+      <div class="row">
+        <button id="edit-save-btn" onclick="saveEdit()">Save</button>
+        <button id="edit-cancel-btn" onclick="closeEdit()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, query, orderBy, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
     const firebaseConfig = {
@@ -351,12 +525,18 @@
     compressor.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
-    function playSound(url) {
+    function playSound(url, timeIn, timeOut) {
       if (current) { current.pause(); current.currentTime = 0; }
       if (currentSource) { try { currentSource.disconnect(); } catch(e){} }
       if (audioCtx.state === "suspended") audioCtx.resume();
       current = new Audio(url);
       current.crossOrigin = "anonymous";
+      if (timeIn) current.currentTime = timeIn;
+      if (timeOut) {
+        current.addEventListener("timeupdate", function() {
+          if (current.currentTime >= timeOut) { current.pause(); current.currentTime = timeIn || 0; }
+        });
+      }
       current.play().then(() => {
         try {
           currentSource = audioCtx.createMediaElementSource(current);
@@ -365,15 +545,19 @@
       }).catch(() => {
         current = new Audio(url);
         current.volume = 0.6;
+        if (timeIn) current.currentTime = timeIn;
         current.play();
       });
     }
+
+    // store all docs for manage panel
+    let allDocs = [];
 
     function renderButton(s, i, container) {
       const btn = document.createElement("button");
       btn.className = "sound-btn " + colorMap[i % colorMap.length];
       btn.textContent = s.label;
-      btn.onclick = () => playSound(s.url);
+      btn.onclick = () => playSound(s.url, s.timeIn || null, s.timeOut || null);
       container.appendChild(btn);
     }
 
@@ -395,9 +579,10 @@
       const col = collection(db, "sounds");
       await seedIfEmpty(col);
       const snap = await getDocs(query(col, orderBy("order")));
+      allDocs = [];
+      snap.forEach(d => allDocs.push({ id: d.id, ...d.data() }));
       const grouped = {};
-      snap.forEach(doc => {
-        const d = doc.data();
+      allDocs.forEach(d => {
         if (!grouped[d.category]) grouped[d.category] = [];
         grouped[d.category].push(d);
       });
@@ -482,6 +667,88 @@
         renderButton({ label, url }, document.getElementById(category).children.length, document.getElementById(category));
         setTimeout(closePanel, 800);
       }
+    };
+    // --- Manage Panel ---
+    const catLabels = { themes: "Theme Songs", tv: "TV & Movies", reactions: "Reactions", sfx: "Sound Effects", quotes: "Quotes" };
+
+    function openManage() {
+      const list = document.getElementById("manage-list");
+      list.innerHTML = "";
+      allDocs.forEach(s => {
+        const row = document.createElement("div");
+        row.className = "manage-item";
+        row.innerHTML = `
+          <span class="manage-item-label">${s.label}</span>
+          <span class="manage-item-cat">${catLabels[s.category] || s.category}</span>
+          <button class="manage-edit-btn">Edit</button>
+          <button class="manage-del-btn">Del</button>
+        `;
+        row.querySelector(".manage-edit-btn").onclick = () => openEdit(s);
+        row.querySelector(".manage-del-btn").onclick = () => deleteSound(s.id, row);
+        list.appendChild(row);
+      });
+      document.getElementById("manage-panel").classList.add("open");
+    }
+
+    async function deleteSound(id, row) {
+      if (!confirm("Delete this sound?")) return;
+      await deleteDoc(doc(db, "sounds", id));
+      allDocs = allDocs.filter(s => s.id !== id);
+      row.remove();
+    }
+
+    window.closeManage = () => document.getElementById("manage-panel").classList.remove("open");
+
+    // --- Edit Modal ---
+    let editingId = null;
+
+    function openEdit(s) {
+      editingId = s.id;
+      document.getElementById("edit-label").value = s.label;
+      document.getElementById("edit-url").value = s.url;
+      document.getElementById("edit-category").value = s.category;
+      document.getElementById("edit-timein").value = s.timeIn != null ? s.timeIn : "";
+      document.getElementById("edit-timeout").value = s.timeOut != null ? s.timeOut : "";
+      document.getElementById("edit-status").textContent = "";
+      document.getElementById("edit-modal").classList.add("open");
+    }
+
+    window.closeEdit = () => document.getElementById("edit-modal").classList.remove("open");
+
+    window.saveEdit = async function() {
+      const status = document.getElementById("edit-status");
+      const label = document.getElementById("edit-label").value.trim();
+      const url = document.getElementById("edit-url").value.trim();
+      const category = document.getElementById("edit-category").value;
+      const timeInVal = document.getElementById("edit-timein").value;
+      const timeOutVal = document.getElementById("edit-timeout").value;
+      if (!label || !url) { status.textContent = "Label and URL are required."; return; }
+      const updates = { label, url, category };
+      updates.timeIn = timeInVal !== "" ? parseFloat(timeInVal) : null;
+      updates.timeOut = timeOutVal !== "" ? parseFloat(timeOutVal) : null;
+      await updateDoc(doc(db, "sounds", editingId), updates);
+      const idx = allDocs.findIndex(s => s.id === editingId);
+      if (idx !== -1) allDocs[idx] = { ...allDocs[idx], ...updates };
+      status.textContent = "Saved!";
+      setTimeout(() => {
+        closeEdit();
+        // re-render all buttons
+        ["themes","tv","reactions","sfx","quotes"].forEach(cat => {
+          const el = document.getElementById(cat);
+          el.innerHTML = "";
+          allDocs.filter(s => s.category === cat).forEach((s, i) => renderButton(s, i, el));
+        });
+        openManage();
+      }, 600);
+    };
+
+    document.getElementById("manage-btn").onclick = () => {
+      if (!adminUnlocked) {
+        const pw = prompt("Password:");
+        if (pw !== ADMIN_PASSWORD) return;
+        adminUnlocked = true;
+      }
+      openManage();
     };
   </script>
 </body>
