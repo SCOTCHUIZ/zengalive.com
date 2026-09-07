@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 53 | 2026-08-07 -->
+<!-- REVISION: 54 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -275,7 +275,8 @@
       border: 1px solid #333;
       border-radius: 16px;
       padding: 20px;
-      width: min(280px, 92vw);
+      width: 260px;
+      max-width: 92vw;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -378,7 +379,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r53</span>
+    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r54</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -762,11 +763,10 @@
 
     function makeDraggable(thumbId, inputId, isOut) {
       const thumb = document.getElementById(thumbId);
-      thumb.addEventListener("mousedown", startDrag);
-      thumb.addEventListener("touchstart", startDrag, { passive: true });
       function startDrag(e) {
-        e.preventDefault && e.preventDefault();
+        e.preventDefault();
         const onMove = ev => {
+          if (!trimDuration) return;
           const tl = document.getElementById("trim-timeline");
           const rect = tl.getBoundingClientRect();
           const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
@@ -793,6 +793,8 @@
         document.addEventListener("touchmove", onMove);
         document.addEventListener("touchend", onUp);
       }
+      thumb.addEventListener("mousedown", startDrag);
+      thumb.addEventListener("touchstart", e => { e.preventDefault(); startDrag(e); }, { passive: false });
     }
 
     makeDraggable("trim-in-thumb",  "edit-timein",  false);
