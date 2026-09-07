@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 50 | 2026-08-07 -->
+<!-- REVISION: 51 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -27,10 +27,7 @@
       flex-wrap: wrap;
     }
 
-    h1 {
-      font-size: 1.6rem;
-      color: #e0e0e0;
-    }
+    h1 { font-size: 1.6rem; color: #e0e0e0; }
 
     #stop-btn {
       position: fixed;
@@ -49,10 +46,7 @@
       padding: 0;
     }
 
-    #stop-btn img {
-      height: 76px;
-      width: auto;
-    }
+    #stop-btn img { height: 76px; width: auto; }
 
     h2 {
       margin: 24px 0 10px;
@@ -61,7 +55,7 @@
       letter-spacing: 1.5px;
       color: #888;
       border-bottom: 1px solid #333;
-      padding-bottom: 4px; 
+      padding-bottom: 4px;
     }
 
     .grid {
@@ -95,13 +89,113 @@
     .orange { background: #e65100; color: #fff; }
     .teal   { background: #00695c; color: #fff; }
     .pink   { background: #880e4f; color: #fff; }
+
+    /* Add Sound Panel */
+    #add-btn {
+      position: fixed;
+      top: 4px;
+      left: 8px;
+      background: #1565c0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    #add-panel {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1001;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #add-panel.open { display: flex; }
+
+    #add-form {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 24px;
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #add-form h3 { font-size: 1rem; color: #e0e0e0; }
+
+    #add-form input, #add-form select {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+
+    #add-form .row { display: flex; gap: 8px; }
+
+    #add-form .row button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #save-sound-btn { background: #2e7d32; color: #fff; }
+    #cancel-btn     { background: #444; color: #fff; }
+
+    #add-status { font-size: 0.75rem; color: #aaa; text-align: center; min-height: 16px; }
+
+    .tab-row { display: flex; gap: 8px; }
+    .tab {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #444;
+      border-radius: 8px;
+      background: #2a2a2a;
+      color: #888;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-align: center;
+    }
+    .tab.active { background: #1565c0; color: #fff; border-color: #1565c0; }
+
+    #url-section, #file-section { display: none; }
+    #url-section.active, #file-section.active { display: block; }
+
+    #upload-progress {
+      height: 4px;
+      background: #333;
+      border-radius: 2px;
+      overflow: hidden;
+      display: none;
+    }
+    #upload-progress-bar {
+      height: 100%;
+      background: #1565c0;
+      width: 0%;
+      transition: width 0.2s;
+    }
   </style>
 </head>
 <body>
 
+  <button id="add-btn">+ Add Sound</button>
+
   <header>
     <h1>Soundboard</h1>
-    <span style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px;">r50</span>
+    <span style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px;">r51</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -121,15 +215,62 @@
   <h2>Quotes</h2>
   <div class="grid" id="quotes"></div>
 
-  <script>
-    const sounds = {
+  <!-- Add Sound Panel -->
+  <div id="add-panel">
+    <div id="add-form">
+      <h3>Add Sound</h3>
+      <div class="tab-row">
+        <div class="tab active" id="tab-url" onclick="switchTab('url')">URL</div>
+        <div class="tab" id="tab-file" onclick="switchTab('file')">Upload MP3</div>
+      </div>
+      <div id="url-section" class="active">
+        <input type="text" id="sound-url" placeholder="Sound URL" />
+      </div>
+      <div id="file-section">
+        <input type="file" id="sound-file" accept=".mp3,audio/*" />
+        <div id="upload-progress"><div id="upload-progress-bar"></div></div>
+      </div>
+      <input type="text" id="sound-label" placeholder="Label (e.g. Cowbell)" />
+      <select id="sound-category">
+        <option value="themes">Theme Songs</option>
+        <option value="tv">TV & Movies</option>
+        <option value="reactions">Reactions</option>
+        <option value="sfx">Sound Effects</option>
+        <option value="quotes">Quotes</option>
+      </select>
+      <div id="add-status"></div>
+      <div class="row">
+        <button id="save-sound-btn" onclick="saveSound()">Save</button>
+        <button id="cancel-btn" onclick="closePanel()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBDYMdphrv9Cjp6Ae20XX3yhtTRD3RFsco",
+      authDomain: "zengalive.firebaseapp.com",
+      projectId: "zengalive",
+      storageBucket: "zengalive.firebasestorage.app",
+      messagingSenderId: "1014999771083",
+      appId: "1:1014999771083:web:170ad2832e4eacfcb8b84e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const SEED_SOUNDS = {
       themes: [
         { label: "A-Team", url: "https://www.myinstants.com/media/sounds/a-szupercsapat-a-team-teljes-zene-mp3cut.mp3" },
         { label: "Green Acres", url: "/sounds/greenacres.mp3" },
         { label: "Mission Impossible", url: "https://www.myinstants.com/media/sounds/m3.mp3" },
       ],
       tv: [
-
         { label: "Cowbell", url: "/sounds/cowbell.mp3" },
         { label: "Bazinga!", url: "https://www.myinstants.com/media/sounds/bazinga.mp3" },
         { label: "Minion What", url: "https://www.myinstants.com/media/sounds/minion-what.mp3" },
@@ -141,7 +282,7 @@
         { label: "Idiot 2", url: "https://www.myinstants.com/media/sounds/freakin-idiot-napoleon.mp3" },
         { label: "Ah Raspberry", url: "/sounds/ah-raspberry.mp3" },
         { label: "Tim Grunt", url: "https://www.myinstants.com/media/sounds/home-improvement-huh.mp3" },
-        { label: "Magnum PI", url: "https://www.myinstants.com/media/sounds/magnum-p.mp3"},
+        { label: "Magnum PI", url: "https://www.myinstants.com/media/sounds/magnum-p.mp3" },
         { label: "Free Weewy!", url: "/sounds/FreeWeewy.mp3" },
         { label: "Spicy!", url: "/sounds/spicy.mp3" }
       ],
@@ -177,16 +318,15 @@
         { label: "Western", url: "https://www.myinstants.com/media/sounds/o-bom-o-mal-e-o-feio-velho-oeste-desafio-dont-talk-duelo-desafio-armas.mp3" },
         { label: "Jaws", url: "https://www.myinstants.com/media/sounds/dundundun.mp3" },
         { label: "Addams Family", url: "https://www.myinstants.com/media/sounds/addams-family-door-bel.mp3" },
-        { label: "Save BIG $$", url: "https://www.myinstants.com/media/sounds/menards.mp3"},
-        { label: "Mexican Hat Dance", url: "https://www.myinstants.com/media/sounds/mexican_hat_dance.mp3"},
-        { label: "You Rang", url: "https://www.myinstants.com/media/sounds/yourang1.mp3"},
+        { label: "Save BIG $$", url: "https://www.myinstants.com/media/sounds/menards.mp3" },
+        { label: "Mexican Hat Dance", url: "https://www.myinstants.com/media/sounds/mexican_hat_dance.mp3" },
+        { label: "You Rang", url: "https://www.myinstants.com/media/sounds/yourang1.mp3" },
         { label: "Duh Duh Duhn", url: "https://www.myinstants.com/media/sounds/dun-dun-dun-sound-effect-brass_8nFBccR.mp3" },
         { label: "Taco Bell", url: "https://cdn.blerp.com/normalized/ab8299c0-91d4-11ec-8583-dfca0b055182" },
         { label: "Yakety Sax", url: "https://cdn.blerp.com/normalized/74574640-9331-11ec-82ba-4b0b0588e63e" },
         { label: "Batman '66", url: "https://cdn.blerp.com/normalized/a755fa40-976a-11ec-917b-7989fd768a45" },
         { label: "Rimshot", url: "https://cdn.pixabay.com/audio/2022/03/15/audio_2c1cb36319.mp3" }
       ],
-       
       quotes: [
         { label: "Trump Thank You", url: "https://www.myinstants.com/media/sounds/thank-you-very-much-trump.mp3" },
         { label: "Don't Be Rude", url: "https://www.myinstants.com/media/sounds/trump-dont-be-rude.mp3" },
@@ -194,7 +334,7 @@
       ]
     };
 
-    // --- Audio setup with compressor ---
+    // --- Audio setup ---
     const colorMap = ["blue","green","purple","orange","teal","pink"];
     let current = null;
     let currentSource = null;
@@ -215,16 +355,13 @@
       if (current) { current.pause(); current.currentTime = 0; }
       if (currentSource) { try { currentSource.disconnect(); } catch(e){} }
       if (audioCtx.state === "suspended") audioCtx.resume();
-
       current = new Audio(url);
       current.crossOrigin = "anonymous";
       current.play().then(() => {
         try {
           currentSource = audioCtx.createMediaElementSource(current);
           currentSource.connect(compressor);
-        } catch(e) {
-          current.volume = 0.6;
-        }
+        } catch(e) { current.volume = 0.6; }
       }).catch(() => {
         current = new Audio(url);
         current.volume = 0.6;
@@ -232,22 +369,115 @@
       });
     }
 
-    // --- Render buttons ---
-    Object.entries(sounds).forEach(([category, items]) => {
-      const container = document.getElementById(category);
-      items.forEach((s, i) => {
-        const btn = document.createElement("button");
-        btn.className = "sound-btn " + colorMap[i % colorMap.length];
-        btn.textContent = s.label;
-        btn.onclick = () => playSound(s.url);
-        container.appendChild(btn);
-      });
-    });
+    function renderButton(s, i, container) {
+      const btn = document.createElement("button");
+      btn.className = "sound-btn " + colorMap[i % colorMap.length];
+      btn.textContent = s.label;
+      btn.onclick = () => playSound(s.url);
+      container.appendChild(btn);
+    }
 
-    // --- Stop All ---
+    async function seedIfEmpty(col) {
+      const snap = await getDocs(col);
+      if (!snap.empty) return;
+      for (const [category, items] of Object.entries(SEED_SOUNDS)) {
+        for (let i = 0; i < items.length; i++) {
+          await addDoc(col, { ...items[i], category, order: i });
+        }
+      }
+    }
+
+    async function loadSounds() {
+      const col = collection(db, "sounds");
+      await seedIfEmpty(col);
+      const snap = await getDocs(query(col, orderBy("order")));
+      const grouped = {};
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (!grouped[d.category]) grouped[d.category] = [];
+        grouped[d.category].push(d);
+      });
+      for (const [category, items] of Object.entries(grouped)) {
+        const container = document.getElementById(category);
+        if (!container) continue;
+        items.forEach((s, i) => renderButton(s, i, container));
+      }
+    }
+
+    loadSounds();
+
     document.getElementById("stop-btn").onclick = () => {
       if (current) { current.pause(); current.currentTime = 0; }
       if (currentSource) { try { currentSource.disconnect(); } catch(e){} }
+    };
+
+    // --- Add Sound Panel ---
+    const ADMIN_PASSWORD = "zengsound";
+
+    let adminUnlocked = false;
+
+    window.switchTab = function(tab) {
+      document.getElementById("url-section").classList.toggle("active", tab === "url");
+      document.getElementById("file-section").classList.toggle("active", tab === "file");
+      document.getElementById("tab-url").classList.toggle("active", tab === "url");
+      document.getElementById("tab-file").classList.toggle("active", tab === "file");
+    };
+
+    window.closePanel = function() {
+      document.getElementById("add-panel").classList.remove("open");
+      document.getElementById("add-status").textContent = "";
+      document.getElementById("sound-url").value = "";
+      document.getElementById("sound-label").value = "";
+      document.getElementById("sound-file").value = "";
+      document.getElementById("upload-progress").style.display = "none";
+      document.getElementById("upload-progress-bar").style.width = "0%";
+    };
+
+    document.getElementById("add-btn").onclick = () => {
+      if (!adminUnlocked) {
+        const pw = prompt("Password:");
+        if (pw !== ADMIN_PASSWORD) return;
+        adminUnlocked = true;
+      }
+      document.getElementById("add-panel").classList.add("open");
+    };
+
+    window.saveSound = async function() {
+      const label = document.getElementById("sound-label").value.trim();
+      const category = document.getElementById("sound-category").value;
+      const status = document.getElementById("add-status");
+      const isFile = document.getElementById("file-section").classList.contains("active");
+
+      if (!label) { status.textContent = "Label is required."; return; }
+
+      if (isFile) {
+        const file = document.getElementById("sound-file").files[0];
+        if (!file) { status.textContent = "Choose a file."; return; }
+        status.textContent = "Uploading...";
+        const storageRef = ref(storage, `sounds/${Date.now()}_${file.name}`);
+        const task = uploadBytesResumable(storageRef, file);
+        const progress = document.getElementById("upload-progress");
+        const bar = document.getElementById("upload-progress-bar");
+        progress.style.display = "block";
+        task.on("state_changed",
+          snap => { bar.style.width = (snap.bytesTransferred / snap.totalBytes * 100) + "%"; },
+          () => { status.textContent = "Upload failed."; },
+          async () => {
+            const url = await getDownloadURL(task.snapshot.ref);
+            await addDoc(collection(db, "sounds"), { label, url, category, order: Date.now() });
+            status.textContent = "Saved!";
+            renderButton({ label, url }, document.getElementById(category).children.length, document.getElementById(category));
+            setTimeout(closePanel, 800);
+          }
+        );
+      } else {
+        const url = document.getElementById("sound-url").value.trim();
+        if (!url) { status.textContent = "URL is required."; return; }
+        await addDoc(collection(db, "sounds"), { label, url, category, order: Date.now() });
+        status.textContent = "Saved!";
+        renderButton({ label, url }, document.getElementById(category).children.length, document.getElementById(category));
+        setTimeout(closePanel, 800);
+      }
     };
   </script>
 </body>
