@@ -394,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r58</span>
+    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">⚙</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -901,14 +901,8 @@
       }, 600);
     };
 
-    // --- Admin: triple-click revision tag to open manage ---
-    let revClicks = 0, revTimer;
-    document.getElementById("rev-tag").onclick = () => {
-      revClicks++;
-      clearTimeout(revTimer);
-      revTimer = setTimeout(() => revClicks = 0, 1500);
-      if (revClicks >= 3) { revClicks = 0; openManage(); }
-    };
+    // --- Admin: single-click gear to open manage ---
+    document.getElementById("rev-tag").onclick = () => openManage();
   </script>
 </body>
 </html>
