@@ -734,7 +734,8 @@
     function openManage() {
       const list = document.getElementById("manage-list");
       list.innerHTML = "";
-      allDocs.forEach(s => {
+      const sorted = [...allDocs].sort((a, b) => a.label.localeCompare(b.label));
+      sorted.forEach(s => {
         const row = document.createElement("div");
         row.className = "manage-item";
         row.innerHTML = `
