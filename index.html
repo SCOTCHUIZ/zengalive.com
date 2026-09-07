@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 57 | 2026-08-07 -->
+<!-- REVISION: 58 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -191,18 +191,30 @@
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.85);
       z-index: 1002;
-      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     #manage-panel.open { display: flex; }
+
+    #manage-inner {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 16px;
+      width: min(420px, 96vw);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
     #manage-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid #333;
       flex-shrink: 0;
     }
@@ -222,7 +234,7 @@
     #manage-list {
       overflow-y: auto;
       flex: 1;
-      padding: 12px 16px;
+      padding: 8px 16px;
     }
 
     .manage-item {
@@ -382,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r57</span>
+    <span id="rev-tag" style="font-size:0.6rem; color:#444; position:fixed; top:4px; right:8px; cursor:default; user-select:none;">r58</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -404,12 +416,14 @@
 
   <!-- Manage Panel -->
   <div id="manage-panel">
-    <div id="manage-header">
-      <h3>Manage Sounds</h3>
-      <button id="manage-close" onclick="closeManage()">Close</button>
+    <div id="manage-inner">
+      <div id="manage-header">
+        <h3>Manage Sounds</h3>
+        <button id="manage-close" onclick="closeManage()">Close</button>
+      </div>
+      <button id="add-btn" onclick="openAddForm()">+ Add Sound</button>
+      <div id="manage-list"></div>
     </div>
-    <button id="add-btn" onclick="openAddForm()">+ Add Sound</button>
-    <div id="manage-list"></div>
   </div>
 
   <!-- Add Sound Form (inside manage) -->
