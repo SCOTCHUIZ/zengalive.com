@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 59 | 2026-08-07 -->
+<!-- REVISION: 60 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -394,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r59</span>
+    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r60</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -607,11 +607,13 @@
       current.crossOrigin = "anonymous";
       if (timeIn) current.currentTime = timeIn;
       const FADE = 1.5;
+      let fadingOut = false;
       current.addEventListener("timeupdate", function() {
         const end = timeOut || current.duration;
         if (!end) return;
         const remaining = end - current.currentTime;
-        if (remaining <= FADE && remaining > 0) {
+        if (!fadingOut && remaining <= FADE && remaining > 0) {
+          fadingOut = true;
           gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
           gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
           gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + remaining);
@@ -619,6 +621,7 @@
         if (timeOut && current.currentTime >= timeOut) {
           current.pause();
           current.currentTime = timeIn || 0;
+          fadingOut = false;
           gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
           gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
         }
