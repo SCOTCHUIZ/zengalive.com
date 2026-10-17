@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 67 | 2026-08-07 -->
+<!-- REVISION: 68 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -394,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r67</span>
+    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r68</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -654,11 +654,8 @@
         }).catch(() => { current.volume = 0.8; current.play(); });
       } else {
         current.volume = 0.8;
-        current.play().then(() => {
-          const doSchedule = () => scheduleFade(timeOut || current.duration);
-          if (current.duration) doSchedule();
-          else current.addEventListener("loadedmetadata", doSchedule, { once: true });
-        }).catch(() => {});
+        current.addEventListener("loadedmetadata", () => scheduleFade(timeOut || current.duration), { once: true });
+        current.play().catch(() => {});
       }
     }
 
