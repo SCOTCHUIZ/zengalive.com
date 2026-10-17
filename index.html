@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 64 | 2026-08-07 -->
+<!-- REVISION: 65 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -394,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r64</span>
+    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r65</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -599,8 +599,8 @@
     gainNode.connect(audioCtx.destination);
 
     function playSound(url, timeIn, timeOut, fadeOut) {
-      if (current) { current.pause(); current.currentTime = 0; }
-      if (currentSource) { try { currentSource.disconnect(); } catch(e){} }
+      if (current) { current.pause(); current.currentTime = 0; current = null; }
+      if (currentSource) { try { currentSource.disconnect(); } catch(e){} currentSource = null; }
       if (audioCtx.state === "suspended") audioCtx.resume();
       gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
       gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
@@ -632,7 +632,9 @@
         try {
           currentSource = audioCtx.createMediaElementSource(current);
           currentSource.connect(compressor);
-        } catch(e) {}
+        } catch(e) {
+          current.volume = 0.8;
+        }
         scheduleFade(timeOut || current.duration);
         if (!timeOut && !current.duration) {
           current.addEventListener("loadedmetadata", () => scheduleFade(current.duration), { once: true });
