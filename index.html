@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 62 | 2026-08-07 -->
+<!-- REVISION: 63 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -394,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r62</span>
+    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r63</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -484,6 +484,7 @@
         <input type="number" id="edit-timein" placeholder="In (sec)" step="0.1" min="0" />
         <input type="number" id="edit-timeout" placeholder="Out (sec)" step="0.1" min="0" />
       </div>
+      <input type="number" id="edit-fadeout" placeholder="Fade out (sec, default auto)" step="0.5" min="0" />
       <div id="edit-status"></div>
       <div class="row">
         <button id="edit-save-btn" onclick="saveEdit()">Save</button>
@@ -597,7 +598,7 @@
     compressor.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
-    function playSound(url, timeIn, timeOut) {
+    function playSound(url, timeIn, timeOut, fadeOut) {
       if (current) { current.pause(); current.currentTime = 0; }
       if (currentSource) { try { currentSource.disconnect(); } catch(e){} }
       if (audioCtx.state === "suspended") audioCtx.resume();
@@ -609,7 +610,7 @@
       let FADE = 1.5;
       let fadeTimer = null;
       function scheduleFade(end) {
-        FADE = end > 10 ? 3 : 1.5;
+        FADE = fadeOut || (end > 10 ? 3 : 1.5);
         if (fadeTimer) return;
         const delay = (end - current.currentTime - FADE) * 1000;
         fadeTimer = setTimeout(() => {
@@ -658,7 +659,7 @@
       const btn = document.createElement("button");
       btn.className = "sound-btn " + colorMap[i % colorMap.length];
       btn.textContent = s.label;
-      btn.onclick = () => playSound(s.url, s.timeIn || null, s.timeOut || null);
+      btn.onclick = () => playSound(s.url, s.timeIn || null, s.timeOut || null, s.fadeOut || null);
       container.appendChild(btn);
     }
 
@@ -882,6 +883,7 @@
       document.getElementById("edit-category").value = s.category;
       document.getElementById("edit-timein").value  = s.timeIn  != null ? s.timeIn  : "";
       document.getElementById("edit-timeout").value = s.timeOut != null ? s.timeOut : "";
+      document.getElementById("edit-fadeout").value = s.fadeOut != null ? s.fadeOut : "";
       document.getElementById("edit-status").textContent = "";
       document.getElementById("trim-playhead").style.display = "none";
       // load audio for timeline
@@ -911,12 +913,15 @@
       const category = document.getElementById("edit-category").value;
       const timeInVal = document.getElementById("edit-timein").value;
       const timeOutVal = document.getElementById("edit-timeout").value;
+      const fadeOutVal = document.getElementById("edit-fadeout").value;
       if (!label || !url) { status.textContent = "Label and URL are required."; return; }
       const updates = { label, url, category };
       const parsedIn  = timeInVal  !== "" ? parseFloat(timeInVal)  : null;
       const parsedOut = timeOutVal !== "" ? parseFloat(timeOutVal) : null;
-      updates.timeIn  = (parsedIn  && parsedIn  > 0)                        ? parsedIn  : null;
-      updates.timeOut = (parsedOut && parsedOut < trimDuration - 0.1)       ? parsedOut : null;
+      const parsedFade = fadeOutVal !== "" ? parseFloat(fadeOutVal) : null;
+      updates.timeIn  = (parsedIn  && parsedIn  > 0)                  ? parsedIn  : null;
+      updates.timeOut = (parsedOut && parsedOut < trimDuration - 0.1) ? parsedOut : null;
+      updates.fadeOut = (parsedFade && parsedFade > 0)                ? parsedFade : null;
       await updateDoc(doc(db, "sounds", editingId), updates);
       const idx = allDocs.findIndex(s => s.id === editingId);
       if (idx !== -1) allDocs[idx] = { ...allDocs[idx], ...updates };
