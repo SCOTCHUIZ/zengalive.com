@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 66 | 2026-08-07 -->
+<!-- REVISION: 67 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -394,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r66</span>
+    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r67</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -633,6 +633,7 @@
         if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null; }
         gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
         gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
+        if (current) current.volume = 0.8;
       }
       if (timeOut) {
         current.addEventListener("timeupdate", function() {
@@ -654,10 +655,9 @@
       } else {
         current.volume = 0.8;
         current.play().then(() => {
-          scheduleFade(timeOut || current.duration);
-          if (!timeOut && !current.duration) {
-            current.addEventListener("loadedmetadata", () => scheduleFade(current.duration), { once: true });
-          }
+          const doSchedule = () => scheduleFade(timeOut || current.duration);
+          if (current.duration) doSchedule();
+          else current.addEventListener("loadedmetadata", doSchedule, { once: true });
         }).catch(() => {});
       }
     }
