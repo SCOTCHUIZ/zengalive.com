@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 61 | 2026-08-07 -->
+<!-- REVISION: 62 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -394,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r61</span>
+    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r62</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -606,9 +606,10 @@
       current = new Audio(url);
       current.crossOrigin = "anonymous";
       if (timeIn) current.currentTime = timeIn;
-      const FADE = 1.5;
+      let FADE = 1.5;
       let fadeTimer = null;
       function scheduleFade(end) {
+        FADE = end > 10 ? 3 : 1.5;
         if (fadeTimer) return;
         const delay = (end - current.currentTime - FADE) * 1000;
         fadeTimer = setTimeout(() => {
