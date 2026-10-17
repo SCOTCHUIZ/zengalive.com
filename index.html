@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 69-debug | 2026-08-07 -->
+<!-- REVISION: 69 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -394,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r69d</span>
+    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r69</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -598,67 +598,57 @@
     compressor.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
-    function playSound(url, timeIn, timeOut, fadeOut) {
+    async function playSound(url, timeIn, timeOut, fadeOut) {
       if (current) { current.pause(); current.currentTime = 0; current = null; }
       if (currentSource) { try { currentSource.disconnect(); } catch(e){} currentSource = null; }
       if (audioCtx.state === "suspended") audioCtx.resume();
       gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
       gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
-      current = new Audio(url);
-      if (timeIn) current.currentTime = timeIn;
-      const isLocal = url.startsWith("/");
+
       let fadeTimer = null;
       function scheduleFade(end) {
         if (fadeTimer) return;
         const FADE = fadeOut || (end > 10 ? 3 : 1.5);
-        const delay = Math.max(0, (end - (current.currentTime || 0) - FADE) * 1000);
-        console.log("scheduleFade: end=", end, "FADE=", FADE, "delay=", delay, "currentTime=", current.currentTime);
+        const delay = Math.max(0, (end - FADE) * 1000);
         fadeTimer = setTimeout(() => {
-          if (isLocal) {
-            gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
-            gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + FADE);
-          } else {
-            const start = current.volume;
-            const steps = 30;
-            let i = 0;
-            const interval = setInterval(() => {
-              i++;
-              current.volume = Math.max(0, start * (1 - i / steps));
-              if (i >= steps) clearInterval(interval);
-            }, FADE * 1000 / steps);
-          }
+          gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + FADE);
         }, delay);
       }
       function resetGain() {
         if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null; }
         gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
         gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
-        if (current) current.volume = 0.8;
       }
-      if (timeOut) {
-        current.addEventListener("timeupdate", function() {
-          if (current.currentTime >= timeOut) { current.pause(); resetGain(); }
-        });
-      }
-      current.addEventListener("ended", resetGain);
-      if (isLocal) {
-        current.play().then(() => {
-          try {
-            currentSource = audioCtx.createMediaElementSource(current);
-            currentSource.connect(compressor);
-          } catch(e) { current.volume = 0.8; }
-          scheduleFade(timeOut || current.duration);
-          if (!timeOut && !current.duration) {
-            current.addEventListener("loadedmetadata", () => scheduleFade(current.duration), { once: true });
-          }
-        }).catch(() => { current.volume = 0.8; current.play(); });
-      } else {
+
+      try {
+        const resp = await fetch(url);
+        const buf = await resp.arrayBuffer();
+        const decoded = await audioCtx.decodeAudioData(buf);
+        const bufSource = audioCtx.createBufferSource();
+        bufSource.buffer = decoded;
+        bufSource.connect(compressor);
+        const duration = decoded.duration;
+        const start = timeIn || 0;
+        const end = timeOut || duration;
+        bufSource.start(0, start, end - start);
+        bufSource.onended = resetGain;
+        scheduleFade(end - start);
+        // store a fake current so stop button works
+        current = { pause: () => { bufSource.stop(); resetGain(); }, currentTime: 0 };
+      } catch(e) {
+        // fetch failed (CORS) — fall back to Audio element, no fade on iOS
+        current = new Audio(url);
         current.volume = 0.8;
-        current.addEventListener("loadedmetadata", () => {
-          console.log("loadedmetadata fired, duration:", current.duration, "timeOut:", timeOut, "fadeOut:", fadeOut);
-          scheduleFade(timeOut || current.duration);
-        }, { once: true });
+        if (timeIn) current.currentTime = timeIn;
+        if (timeOut) {
+          current.addEventListener("timeupdate", function() {
+            if (current.currentTime >= timeOut) { current.pause(); resetGain(); }
+          });
+        }
+        current.addEventListener("ended", resetGain);
+        current.addEventListener("loadedmetadata", () => scheduleFade(timeOut || current.duration), { once: true });
         current.play().catch(() => {});
       }
     }
@@ -709,8 +699,8 @@
     loadSounds();
 
     document.getElementById("stop-btn").onclick = () => {
-      if (current) { current.pause(); current.currentTime = 0; }
-      if (currentSource) { try { currentSource.disconnect(); } catch(e){} }
+      if (current) { try { current.pause(); } catch(e){} current = null; }
+      if (currentSource) { try { currentSource.disconnect(); } catch(e){} currentSource = null; }
       gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
       gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
     };
