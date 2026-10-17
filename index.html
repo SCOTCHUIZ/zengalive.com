@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- REVISION: 65 | 2026-08-07 -->
+<!-- REVISION: 66 | 2026-08-07 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -394,7 +394,7 @@
 
   <header>
     <h1>Soundboard</h1>
-    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r65</span>
+    <span id="rev-tag" style="font-size:0.9rem; color:#333; position:fixed; top:6px; right:10px; cursor:default; user-select:none;">r66</span>
   </header>
 
   <button id="stop-btn"><img src="/StopSign.png" alt="Stop"></button>
@@ -606,15 +606,27 @@
       gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
       current = new Audio(url);
       if (timeIn) current.currentTime = timeIn;
+      const isLocal = url.startsWith("/");
       let fadeTimer = null;
       function scheduleFade(end) {
         if (fadeTimer) return;
         const FADE = fadeOut || (end > 10 ? 3 : 1.5);
         const delay = Math.max(0, (end - (current.currentTime || 0) - FADE) * 1000);
         fadeTimer = setTimeout(() => {
-          gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
-          gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
-          gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + FADE);
+          if (isLocal) {
+            gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + FADE);
+          } else {
+            const start = current.volume;
+            const steps = 30;
+            let i = 0;
+            const interval = setInterval(() => {
+              i++;
+              current.volume = Math.max(0, start * (1 - i / steps));
+              if (i >= steps) clearInterval(interval);
+            }, FADE * 1000 / steps);
+          }
         }, delay);
       }
       function resetGain() {
@@ -628,28 +640,26 @@
         });
       }
       current.addEventListener("ended", resetGain);
-      current.play().then(() => {
-        try {
-          currentSource = audioCtx.createMediaElementSource(current);
-          currentSource.connect(compressor);
-        } catch(e) {
-          current.volume = 0.8;
-        }
-        scheduleFade(timeOut || current.duration);
-        if (!timeOut && !current.duration) {
-          current.addEventListener("loadedmetadata", () => scheduleFade(current.duration), { once: true });
-        }
-      }).catch(() => {
-        current = new Audio(url);
-        current.volume = 0.6;
-        if (timeIn) current.currentTime = timeIn;
-        if (timeOut) {
-          current.addEventListener("timeupdate", function() {
-            if (current.currentTime >= timeOut) current.pause();
-          });
-        }
-        current.play();
-      });
+      if (isLocal) {
+        current.play().then(() => {
+          try {
+            currentSource = audioCtx.createMediaElementSource(current);
+            currentSource.connect(compressor);
+          } catch(e) { current.volume = 0.8; }
+          scheduleFade(timeOut || current.duration);
+          if (!timeOut && !current.duration) {
+            current.addEventListener("loadedmetadata", () => scheduleFade(current.duration), { once: true });
+          }
+        }).catch(() => { current.volume = 0.8; current.play(); });
+      } else {
+        current.volume = 0.8;
+        current.play().then(() => {
+          scheduleFade(timeOut || current.duration);
+          if (!timeOut && !current.duration) {
+            current.addEventListener("loadedmetadata", () => scheduleFade(current.duration), { once: true });
+          }
+        }).catch(() => {});
+      }
     }
 
     // store all docs for manage panel
